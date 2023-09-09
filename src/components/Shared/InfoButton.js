@@ -1,8 +1,8 @@
 import { Button, styled } from "@mui/material";
-import React, { Component } from "react";
+import React from "react";
 import QuestionMarkIcon from "@mui/icons-material/QuestionMark";
 
-const StyledButton = styled(Button)({
+const StyledButton = styled(Button)(({ theme }) => ({
     backgroundColor: "rgb(255, 255, 255, 0.3)",
     fontWeight: "700",
     fontSize: "2.5rem",
@@ -13,16 +13,14 @@ const StyledButton = styled(Button)({
     "&:hover": {
         backgroundColor: "rgb(255, 255, 255, 0.5)",
     },
-});
+}));
 
-class InfoButton extends Component {
-    render() {
-        return (
-            <StyledButton disableRipple {...this.props}>
-                <QuestionMarkIcon fontSize="inherit" />
-            </StyledButton>
-        );
-    }
-}
+const InfoButton = (props) => {
+    return (
+        <StyledButton disableRipple {...props}>
+            <QuestionMarkIcon fontSize="inherit" />
+        </StyledButton>
+    );
+};
 
 export default InfoButton;

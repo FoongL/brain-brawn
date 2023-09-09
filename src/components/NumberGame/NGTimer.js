@@ -1,9 +1,7 @@
-import React, { Component } from "react";
+import React from "react";
 
-class NGTimer extends Component {
-    render() {
-        return <div></div>;
-    }
-}
+const NGTimer = () => {
+    return <div></div>;
+};
 
 export default NGTimer;

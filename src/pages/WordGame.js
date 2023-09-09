@@ -1,5 +1,4 @@
-import React, { Component } from "react";
-import { getRandomIntInclusive, getRandomWord, shuffle } from "../utils";
+import { getRandomIntInclusive, getRandomWord, shuffle, timeout } from "../utils";
 import { Howl, Howler } from "howler";
 
 import fail808 from "../assets/sounds/fail808.wav";
@@ -20,6 +19,8 @@ import SSNav from "../components/SimonSays/SSNav";
 import WGPlayArea from "../components/WordGame/WGPlayArea";
 import WGHeadings from "../components/WordGame/WGHeadings";
 import WGScoreboards from "../components/WordGame/WGScoreboards";
+
+import React, { useState, useEffect } from 'react';
 
 const LOCALSTORAGE_KEY_HISCORE = "hiScores";
 
@@ -58,219 +59,181 @@ const RestartButton = styled(Button)({
     },
 });
 
-class WordGame extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            livesLeft: 3,
-            words: new Set(),
-            displayWord: "",
-            score: 0,
-            hiScore: 0,
-            gameOver: false,
-            atGameStart: true,
-            previousWord: "",
 
-            muted: false,
-        };
+const WordGame = () => {
+  const [livesLeft, setLivesLeft] = useState(3);
+  const [words, setWords] = useState(new Set());
+  const [displayWord, setDisplayWord] = useState('');
+  const [score, setScore] = useState(0);
+  const [hiScore, setHiScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [atGameStart, setAtGameStart] = useState(true);
+  const [previousWord, setPreviousWord] = useState('');
+  const [muted, setMuted] = useState(false);
 
-        this.successSound = new Howl({
-            src: [succ808],
-        });
+  const successSound = new Howl({
+    src: [succ808],
+  });
 
-        this.lostLifeSound = new Howl({
-            src: [llbreak],
-        });
+  const lostLifeSound = new Howl({
+    src: [llbreak],
+  });
 
-        this.failSound = new Howl({
-            src: [fail808],
-        });
+  const failSound = new Howl({
+    src: [fail808],
+  });
+
+  useEffect(() => {
+    Howler.mute(false);
+    Howler.volume(0.25);
+
+    const storedHiScores = JSON.parse(
+      localStorage.getItem(LOCALSTORAGE_KEY_HISCORE)
+    );
+    if (storedHiScores && storedHiScores.WG) {
+      setHiScore(storedHiScores.WG);
     }
+  }, []);
 
-    componentDidMount() {
-        Howler.mute(false);
-        Howler.volume(0.25);
+  useEffect(() => {
+      const storedHiScores = JSON.parse(
+        localStorage.getItem(LOCALSTORAGE_KEY_HISCORE)
+      );
 
-        const storedHiScores = JSON.parse(
-            localStorage.getItem(LOCALSTORAGE_KEY_HISCORE)
+      if (storedHiScores) {
+        localStorage.setItem(
+          LOCALSTORAGE_KEY_HISCORE,
+          JSON.stringify({
+            ...storedHiScores,
+            WG: hiScore,
+          })
         );
-        if (storedHiScores && storedHiScores.WG)
-            this.setState({ hiScore: storedHiScores.WG });
+        return;
+      }
+
+      localStorage.setItem(
+        LOCALSTORAGE_KEY_HISCORE,
+        JSON.stringify({
+          WG: hiScore,
+        })
+      );
+  }, [hiScore]);
+
+  const selectWord = () => {
+    setAtGameStart(false);
+    let outcome = getRandomIntInclusive(1, 2);
+
+    if (score < 5 || outcome !== 1) {
+      let newWord = getRandomWord();
+      if (newWord === previousWord) {
+        console.log('Same as prev word, getting new one...');
+        selectWord();
+        return;
+      }
+      setDisplayWord(newWord);
+    } else {
+      let newWord = shuffle([...words])[0];
+      if (newWord === previousWord) {
+        console.log('Same as prev word, getting new one...');
+        selectWord();
+        return;
+      }
+      setDisplayWord(newWord);
     }
+  };
 
-    componentDidUpdate(prevProps, prevState) {
-        if (prevState.hiScore !== this.state.hiScore) {
-            const storedHiScores = JSON.parse(
-                localStorage.getItem(LOCALSTORAGE_KEY_HISCORE)
-            );
-
-            if (storedHiScores) {
-                localStorage.setItem(
-                    LOCALSTORAGE_KEY_HISCORE,
-                    JSON.stringify({
-                        ...storedHiScores,
-                        WG: this.state.hiScore,
-                    })
-                );
-                return;
-            }
-
-            localStorage.setItem(
-                LOCALSTORAGE_KEY_HISCORE,
-                JSON.stringify({
-                    WG: this.state.hiScore,
-                })
-            );
-        }
+  const checkUserInput = async (e) => {
+    let result = words.has(displayWord);
+    if (
+      (e.target.name === 'seen' && result) ||
+      (e.target.name === 'not-seen' && !result)
+    ) {
+      successSound.play();
+      setScore((prevState) => prevState + 1);
+      setWords((prevState) => new Set([...prevState, displayWord]));
+      setHiScore((prevState) => Math.max(prevState + 1, hiScore));
+      setPreviousWord(displayWord);
+      selectWord();
+    } else {
+      setLivesLeft((prevState) => prevState - 1);
+      if (livesLeft - 1 === 0) {
+        failSound.play();
+        setLivesLeft(0);
+        setGameOver(true);
+      } else {
+        lostLifeSound.play();
+        setLivesLeft((prevState) => prevState - 1);
+      }
     }
+  };
 
-    selectWord = () => {
-        // roll a dice
-        this.setState({ atGameStart: false });
-        let outcome = getRandomIntInclusive(1, 2);
-
-        // 2/3 chance to get a new word
-        if (this.state.score < 5 || outcome !== 1) {
-            let newWord = getRandomWord();
-            if (newWord === this.state.previousWord) {
-                console.log("Same as prev word, getting new one...");
-                this.selectWord();
-                return;
-            }
-            this.setState((prevState) => {
-                return {
-                    displayWord: newWord,
-                };
-            });
-        } else {
-            let newWord = shuffle([...this.state.words])[0];
-            if (newWord === this.state.previousWord) {
-                console.log("Same as prev word, getting new one...");
-                this.selectWord();
-                return;
-            }
-
-            this.setState((prevState) => {
-                return {
-                    displayWord: newWord,
-                };
-            });
-        }
-    };
-
-    checkUserInput = async (e) => {
-        let result = this.state.words.has(this.state.displayWord);
-        if (
-            (e.target.name === "seen" && result) ||
-            (e.target.name === "not-seen" && !result)
-        ) {
-            this.successSound.play();
-            this.setState(
-                (prevState) => {
-                    return {
-                        score: prevState.score + 1,
-                        words: new Set([
-                            ...prevState.words,
-                            prevState.displayWord,
-                        ]),
-                        hiScore: Math.max(
-                            prevState.score + 1,
-                            prevState.hiScore
-                        ),
-                        previousWord: prevState.displayWord,
-                    };
-                },
-                () => this.selectWord()
-            );
-        } else {
-            this.setState((prevState) => {
-                if (prevState.livesLeft - 1 === 0) {
-                    this.failSound.play();
-                    return {
-                        livesLeft: 0,
-                        gameOver: true,
-                    };
-                }
-                this.lostLifeSound.play();
-                return {
-                    livesLeft: prevState.livesLeft - 1,
-                };
-            });
-        }
-    };
-
-    muteSound = () => {
-        this.setState({ muted: !this.state.muted }, () => {
-            if (this.state.muted) {
-                Howler.mute(true);
-                return;
-            }
-
-            Howler.mute(false);
-        });
-    };
-
-    restartGame = () => {
-        this.setState({
-            livesLeft: 3,
-            words: new Set(),
-            displayWord: "",
-            score: 0,
-            gameOver: false,
-            atGameStart: true,
-        });
-    };
-
-    render() {
-        return (
-            <ThemeProvider theme={theme}>
-                <Box className="WORD-GAME">
-                    <Container>
-                        <Stack justifyContent={"center"} alignItems={"center"}>
-                            <SSNav
-                                muted={this.state.muted}
-                                muteSound={this.muteSound}
-                            />
-                            <WGHeadings />
-                            <WGScoreboards
-                                score={this.state.score}
-                                hiScore={this.state.hiScore}
-                                gameOver={this.state.gameOver}
-                                livesLeft={this.state.livesLeft}
-                            />
-
-                            {this.state.atGameStart && (
-                                <StartButton
-                                    disableRipple
-                                    onClick={this.selectWord}
-                                    sx={{ mt: 3 }}
-                                >
-                                    Start Game
-                                </StartButton>
-                            )}
-
-                            {!this.state.gameOver &&
-                                !this.state.atGameStart && (
-                                    <WGPlayArea
-                                        checkUserInput={this.checkUserInput}
-                                        displayWord={this.state.displayWord}
-                                    />
-                                )}
-                            {this.state.gameOver && (
-                                <RestartButton
-                                    disableRipple
-                                    onClick={this.restartGame}
-                                    sx={{ mt: 3 }}
-                                >
-                                    Play Again?
-                                </RestartButton>
-                            )}
-                        </Stack>
-                    </Container>
-                </Box>
-            </ThemeProvider>
-        );
+  const muteSound = () => {
+    setMuted(!muted);
+    if (muted) {
+      Howler.mute(true);
+    } else {
+      Howler.mute(false);
     }
-}
+  };
+
+  const restartGame = () => {
+    setLivesLeft(3);
+    setWords(new Set());
+    setDisplayWord('');
+    setScore(0);
+    setGameOver(false);
+    setAtGameStart(true);
+  };
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Box className="WORD-GAME">
+        <Container>
+          <Stack justifyContent={'center'} alignItems={'center'}>
+            <SSNav muted={muted} muteSound={muteSound} />
+            <WGHeadings />
+            <WGScoreboards
+              score={score}
+              hiScore={hiScore}
+              gameOver={gameOver}
+              livesLeft={livesLeft}
+            />
+
+            {atGameStart && (
+              <StartButton
+                disableRipple
+                onClick={selectWord}
+                sx={{ mt: 3 }}
+              >
+                Start Game
+              </StartButton>
+            )}
+
+            {!gameOver && !atGameStart && (
+
+              <WGPlayArea
+                checkUserInput={checkUserInput}
+                displayWord={displayWord}
+              />
+            )}
+
+            {gameOver && (
+              <RestartButton
+                disableRipple
+                onClick={restartGame}
+                sx={{ mt: 3 }}
+              >
+                Play Again?
+              </RestartButton>
+            )}
+          </Stack>
+        </Container>
+      </Box>
+    </ThemeProvider>
+  );
+};
 
 export default WordGame;
+
+
+

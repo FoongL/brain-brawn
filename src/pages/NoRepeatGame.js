@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
 import { getArrayOfWords, shuffle } from "../utils";
 import { Howl, Howler } from "howler";
 
@@ -35,53 +35,44 @@ let theme = createTheme({
 
 theme = responsiveFontSizes(theme);
 
-class NoRepeatGame extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            score: 0,
-            hiScore: 0,
-            wordsArray: getArrayOfWords(16),
-            alreadyClicked: [],
-            isGameOver: false,
-            lastClickedWord: "",
-            isGameWon: false,
+const NoRepeatGame = () => {
+    const [score, setScore] = useState(0);
+    const [hiScore, setHiScore] = useState(0);
+    const [wordsArray, setWordsArray] = useState(getArrayOfWords(16));
+    const [alreadyClicked, setAlreadyClicked] = useState([]);
+    const [isGameOver, setIsGameOver] = useState(false);
+    const [lastClickedWord, setLastClickedWord] = useState("");
+    const [isGameWon, setIsGameWon] = useState(false);
+    const [muted, setMuted] = useState(false);
 
-            muted: false,
-        };
+    const successSound = new Howl({
+        src: [succ808],
+    });
 
-        this.successSound = new Howl({
-            src: [succ808],
-        });
+    const failSound = new Howl({
+        src: [fail808],
+    });
 
-        this.failSound = new Howl({
-            src: [fail808],
-        });
-    }
-
-    componentDidMount() {
+    useEffect(() => {
         Howler.mute(false);
         Howler.volume(0.25);
 
-        const storedHiScores = JSON.parse(
-            localStorage.getItem(LOCALSTORAGE_KEY_HISCORE)
-        );
-        if (storedHiScores && storedHiScores.NR)
-            this.setState({ hiScore: storedHiScores.NR });
-    }
+        const storedHiScores = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY_HISCORE));
+        if (storedHiScores && storedHiScores.NR) {
+            setHiScore(storedHiScores.NR);
+        }
+    }, []);
 
-    componentDidUpdate(prevProps, prevState) {
-        if (prevState.hiScore !== this.state.hiScore) {
-            const storedHiScores = JSON.parse(
-                localStorage.getItem(LOCALSTORAGE_KEY_HISCORE)
-            );
+    useEffect(() => {
+        if (hiScore !== 0) {
+            const storedHiScores = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY_HISCORE));
 
             if (storedHiScores) {
                 localStorage.setItem(
                     LOCALSTORAGE_KEY_HISCORE,
                     JSON.stringify({
                         ...storedHiScores,
-                        NR: this.state.hiScore,
+                        NR: hiScore,
                     })
                 );
                 return;
@@ -90,131 +81,92 @@ class NoRepeatGame extends Component {
             localStorage.setItem(
                 LOCALSTORAGE_KEY_HISCORE,
                 JSON.stringify({
-                    NR: this.state.hiScore,
+                    NR: hiScore,
                 })
             );
         }
-    }
+    }, [hiScore]);
 
-    handleClick = (word) => {
-        if (this.state.alreadyClicked.includes(word)) {
+    const handleClick = (word) => {
+        if (alreadyClicked.includes(word)) {
             console.log("Lose and restart");
-            this.failSound.play();
-            this.setState({ isGameOver: true, lastClickedWord: word });
+            failSound.play();
+            setIsGameOver(true);
+            setLastClickedWord(word);
         } else {
-            this.successSound.play();
-            this.setState(
-                (prevState) => {
-                    return {
-                        score: prevState.score + 1,
-                        hiScore: Math.max(
-                            prevState.score + 1,
-                            prevState.hiScore
-                        ),
-                        wordsArray: [...shuffle(prevState.wordsArray)],
-                        alreadyClicked: [...prevState.alreadyClicked, word],
-                    };
-                },
-                () => {
-                    if (
-                        this.state.wordsArray.length ===
-                        this.state.alreadyClicked.length
-                    ) {
-                        this.setState({ isGameWon: true });
-                        return;
-                    }
-                }
-            );
-        }
+            successSound.play();
+            setScore((prevScore) => prevScore + 1);
+            setHiScore((prevHiScore) => Math.max(hiScore + 1, prevHiScore));
+            setWordsArray(shuffle([...wordsArray]));
+            setAlreadyClicked([...alreadyClicked, word]);
 
-        // let newHighScore = Math.max(this.state.score, this.state.hiScore);
-        // this.setState({ hiScore: newHighScore });
-    };
-
-    restartGame = () => {
-        this.setState({
-            score: 0,
-            wordsArray: getArrayOfWords(16),
-            alreadyClicked: [],
-            isGameOver: false,
-            isGameWon: false,
-        });
-    };
-
-    muteSound = () => {
-        this.setState({ muted: !this.state.muted }, () => {
-            if (this.state.muted) {
-                Howler.mute(true);
-                return;
+            if (wordsArray.length === alreadyClicked.length + 1) {
+                setIsGameWon(true);
             }
-
-            Howler.mute(false);
-        });
+        }
     };
 
-    render() {
-        return (
-            <ThemeProvider theme={theme}>
-                <Box className="NO-REPEAT">
-                    <Container>
-                        <Box alignItems={"center"} justifyContent={"center"}>
-                            <Stack
-                                justifyContent={"center"}
-                                alignItems={"center"}
-                            >
-                                <SSNav
-                                    muted={this.state.muted}
-                                    muteSound={this.muteSound}
+    const restartGame = () => {
+        setScore(0);
+        setWordsArray(getArrayOfWords(16));
+        setAlreadyClicked([]);
+        setIsGameOver(false);
+        setIsGameWon(false);
+    };
+
+    const muteSound = () => {
+        setMuted((prevMuted) => !prevMuted);
+
+        if (muted) {
+            Howler.mute(true);
+        } else {
+            Howler.mute(false);
+        }
+    };
+
+    return (
+        <ThemeProvider theme={theme}>
+            <Box className="NO-REPEAT">
+                <Container>
+                    <Box alignItems="center" justifyContent="center">
+                        <Stack justifyContent="center" alignItems="center">
+                            <SSNav muted={muted} muteSound={muteSound} />
+                            <NRHeadings />
+                            <NRScoreboard score={score} hiScore={hiScore} />
+
+                            <NRCardsWrapper>
+                                {!isGameWon &&
+                                    wordsArray.map((word) => {
+                                        const bool = alreadyClicked.includes(word);
+
+                                        return (
+                                            <NRCards
+                                                key={`00x${word}`}
+                                                word={word}
+                                                onClick={handleClick}
+                                                isGameOver={isGameOver}
+                                                isAlreadyClicked={bool}
+                                            />
+                                        );
+                                    })}
+                            </NRCardsWrapper>
+
+                            {isGameOver && (
+                                <NRGameOverElements
+                                    lastClickedWord={lastClickedWord}
+                                    restartGame={restartGame}
                                 />
-                                <NRHeadings />
-                                <NRScoreboard
-                                    score={this.state.score}
-                                    hiScore={this.state.hiScore}
-                                />
+                            )}
 
-                                <NRCardsWrapper>
-                                    {!this.state.isGameWon &&
-                                        this.state.wordsArray.map((word) => {
-                                            let bool =
-                                                this.state.alreadyClicked.includes(
-                                                    word
-                                                );
-
-                                            return (
-                                                <NRCards
-                                                    key={`00x${word}`}
-                                                    word={word}
-                                                    onClick={this.handleClick}
-                                                    isGameOver={
-                                                        this.state.isGameOver
-                                                    }
-                                                    isAlreadyClicked={bool}
-                                                />
-                                            );
-                                        })}
-                                </NRCardsWrapper>
-
-                                {this.state.isGameOver && (
-                                    <NRGameOverElements
-                                        lastClickedWord={
-                                            this.state.lastClickedWord
-                                        }
-                                        restartGame={this.restartGame}
-                                    />
-                                )}
-
-                                {this.state.isGameWon && (
-                                    <NRGameWonElements
-                                        restartGame={this.restartGame}
-                                    />
-                                )}
-                            </Stack>
-                        </Box>
-                    </Container>
-                </Box>
-            </ThemeProvider>
-        );
-    }
-}
+                            {isGameWon && (
+                                <NRGameWonElements restartGame={restartGame} />
+                            )}
+                        </Stack>
+                    </Box>
+                </Container>
+            </Box>
+        </ThemeProvider>
+    );
+};
 
 export default NoRepeatGame;
