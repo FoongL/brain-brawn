@@ -13,8 +13,6 @@ const SSButton = ({
   isDisabled,
 }) => {
   const [isLitUp, setIsLitUp] = useState(false);
-//   const [computerClicked, setComputerClicked] = useState(false);
-//   const [buttonToLight, setButtonToLight] = useState(toLightUp);
 
   const xyloSound = new Howl({
     src: [xyloSounds],
@@ -31,15 +29,7 @@ const SSButton = ({
     },
   });
 
-  //   useEffect(()=>{
-
-  //     console.log('hello')
-  //     console.log('to light up:', toLightUp)
-  //   },[toLightUp])
-
   useEffect(() => {
-    // console.log('can i see this?')
-    // console.log('id:', id, toLightUp)
     if (toLightUp[0] !== id.toString()) {
       return;
     }
@@ -50,8 +40,6 @@ const SSButton = ({
 
   const computerClick = async () => {
     setIsLitUp(true);
-    // setComputerClicked(true);
-    // await lightUpFor(500);
   };
 
   useEffect(() => {
