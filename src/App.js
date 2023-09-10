@@ -7,7 +7,7 @@ import WordGame from "./pages/WordGame";
 import NoRepeatGame from "./pages/NoRepeatGame";
 import Home from "./pages/Home";
 
-import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import { HashRouter, Navigate, Route, Routes, BrowserRouter } from "react-router-dom";
 
 import {
   ThemeProvider,
@@ -28,7 +28,7 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <div className="App">
-        <HashRouter>
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="simon-says" element={<SimonSaysGame />} />
@@ -40,7 +40,7 @@ const App = () => {
 
             <Route path="*" element={<Navigate to="/error404" replace />} />
           </Routes>
-        </HashRouter>
+        </BrowserRouter>
       </div>
     </ThemeProvider>
   );
