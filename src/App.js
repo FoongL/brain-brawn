@@ -7,7 +7,7 @@ import WordGame from "./pages/WordGame";
 import NoRepeatGame from "./pages/NoRepeatGame";
 import Home from "./pages/Home";
 
-import { HashRouter, Navigate, Route, Routes, BrowserRouter } from "react-router-dom";
+import { Navigate, Route, Routes, BrowserRouter } from "react-router-dom";
 
 import {
   ThemeProvider,
