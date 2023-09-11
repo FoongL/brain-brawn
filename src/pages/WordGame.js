@@ -1,4 +1,4 @@
-import { getRandomIntInclusive, getRandomWord, shuffle, timeout } from "../utils";
+import { getRandomIntInclusive, getRandomWord, shuffle } from "../utils";
 import { Howl, Howler } from "howler";
 
 import fail808 from "../assets/sounds/fail808.wav";

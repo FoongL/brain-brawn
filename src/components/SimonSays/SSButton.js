@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Howl } from "howler";
 import React, { useEffect, useState } from "react";
 import { timeout } from "../../utils";

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
 import SSButton from "../components/SimonSays/SSButton";
 import { getRandomIntInclusive, timeout } from "../utils";

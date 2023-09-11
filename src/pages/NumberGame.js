@@ -146,7 +146,7 @@ const NumberGame = () => {
     } else {
       console.log("dis this work???");
     }
-  }, [startSequence]);
+  }, [currentSequence, startSequence]);
 
   const restartGame = () => {
     setUserInput("");
