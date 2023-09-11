@@ -28,7 +28,7 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <div className="App">
-        <BrowserRouter>
+        {/* <BrowserRouter> */}
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="simon-says" element={<SimonSaysGame />} />
@@ -40,7 +40,7 @@ const App = () => {
 
             <Route path="*" element={<Navigate to="/error404" replace />} />
           </Routes>
-        </BrowserRouter>
+        {/* </BrowserRouter> */}
       </div>
     </ThemeProvider>
   );
